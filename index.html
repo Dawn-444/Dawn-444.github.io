@@ -1,0 +1,2381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CocoPPa Play扭蛋日历</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+            position: relative;
+            display: inline-block;
+        }
+        
+        h1:after {
+            content: "";
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 4px;
+            background: linear-gradient(90deg, #3498db, #9b59b6);
+            border-radius: 2px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #7f8c8d;
+            max-width: 800px;
+            margin: 20px auto 0;
+            line-height: 1.6;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 12px 25px;
+            border-radius: 30px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+        
+        .image-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+            max-width: 640px;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+        
+        .date-display {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+        }
+        
+        .date-header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 25px;
+            width: 100%;
+        }
+        
+        .date-info {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .day-number {
+            font-size: 2.8rem;
+            font-weight: 700;
+            line-height: 1;
+            color: #2c3e50;
+        }
+        
+        .day-info {
+            font-size: 1.2rem;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .type-tag-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            max-width: 350px;
+            flex: 1;
+            min-height: 40px; /* 确保有固定高度 */
+        }
+        
+        .type-tag {
+            padding: 8px 15px;
+            border-radius: 50px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+            white-space: nowrap;
+        }
+        
+        /* 备注区域样式 */
+        .note-container {
+            background: #fffde7;
+            border-left: 4px solid #ffd54f;
+            border-radius: 8px;
+            padding: 12px 15px;
+            width: 100%;
+            position: relative;
+        }
+        
+        .note-content {
+            font-size: 0.95rem;
+            color: #5d4037;
+            max-height: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+        }
+        
+        .note-edit-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #ffd54f;
+            color: #5d4037;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .note-edit-btn:hover {
+            background: #ffc107;
+            transform: scale(1.1);
+        }
+        
+        /* 图片显示区域 - 自适应 */
+        .image-display {
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+            transition: all 0.3s ease;
+            background: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #e0e7ff;
+        }
+        
+        /* 不同日期范围的图片尺寸 */
+        .size-640x480 {
+            aspect-ratio: 640/480;
+        }
+        
+        .size-640x580 {
+            aspect-ratio: 640/580;
+        }
+        
+        .size-640x624 {
+            aspect-ratio: 640/624;
+        }
+        
+        .size-default {
+            aspect-ratio: 640/654;
+        }
+        
+        .gallery-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .gallery-slides {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+            height: 100%;
+        }
+        
+        .gallery-slide {
+            min-width: 100%;
+            height: 100%;
+        }
+        
+        .gallery-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .gallery-indicators {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            z-index: 20;
+        }
+        
+        .gallery-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .gallery-indicator.active {
+            background: #3498db;
+            transform: scale(1.2);
+        }
+        
+        .gallery-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #3498db;
+            font-size: 1.2rem;
+            cursor: pointer;
+            z-index: 20;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .gallery-nav:hover {
+            background: #3498db;
+            color: white;
+            transform: translateY(-50%) scale(1.1);
+        }
+        
+        .gallery-prev {
+            left: 15px;
+        }
+        
+        .gallery-next {
+            right: 15px;
+        }
+        
+        .image-display.empty .gallery-container {
+            display: none;
+        }
+        
+        .image-display .empty-image {
+            display: none;
+            font-size: 1.2rem;
+            color: #95a5a6;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .image-display.empty .empty-image {
+            display: block;
+        }
+        
+        .upload-container {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 10;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .upload-btn {
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+        
+        .remove-btn {
+            padding: 10px 20px;
+            background: #95a5a6;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(149, 165, 166, 0.3);
+        }
+        
+        .save-btn {
+            padding: 10px 20px;
+            background: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);
+        }
+        
+        .share-btn {
+            padding: 10px 20px;
+            background: #9b59b6;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(155, 89, 182, 0.3);
+        }
+        
+        .clear-btn {
+            padding: 10px 20px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
+        }
+        
+        .toggle-btn {
+            padding: 10px 15px;
+            background: #34495e;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(52, 73, 94, 0.3);
+        }
+        
+        .upload-btn:hover {
+            background: #2980b9;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(52, 152, 219, 0.4);
+        }
+        
+        .remove-btn:hover {
+            background: #7f8c8d;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(127, 140, 141, 0.4);
+        }
+        
+        .save-btn:hover {
+            background: #27ae60;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(39, 174, 96, 0.4);
+        }
+        
+        .share-btn:hover {
+            background: #8e44ad;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(142, 68, 173, 0.4);
+        }
+        
+        .clear-btn:hover {
+            background: #c0392b;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(192, 57, 43, 0.4);
+        }
+        
+        .toggle-btn:hover {
+            background: #2c3e50;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(44, 62, 80, 0.4);
+        }
+        
+        .calendar-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .year-month-control {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .year-select {
+            padding: 8px 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            background: #f8f9fa;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .month-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .month-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c3e50;
+            min-width: 180px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .control-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: #7f8c8d;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+        }
+        
+        .control-btn:hover {
+            background: #3498db;
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .quick-month-select {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .month-btn {
+            padding: 8px 16px;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .month-btn:hover, .month-btn.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+        
+        .legend {
+            display: none;
+        }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+        }
+        
+        .day-header {
+            text-align: center;
+            padding: 15px 0;
+            font-weight: 600;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: #f8fafd;
+            border-radius: 8px;
+        }
+        
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            background: #f8f9fa;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+        }
+        
+        .calendar-day:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            background: #e3f2fd;
+        }
+        
+        .calendar-day:hover .day-actions {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .day-number-small {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #2c3e50;
+            z-index: 2;
+            margin-bottom: 5px;
+        }
+        
+        .day-types {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 4px;
+            max-height: 40px;
+            overflow-y: auto;
+            padding: 2px;
+            z-index: 2;
+            width: 100%;
+        }
+        
+        .day-type {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            padding: 3px 6px;
+            border-radius: 20px;
+            z-index: 2;
+            color: white;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+        
+        .day-actions {
+            position: absolute;
+            bottom: 5px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            z-index: 3;
+        }
+        
+        .day-action-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .day-action-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .set-type-btn {
+            color: #3498db;
+        }
+        
+        .upload-img-btn {
+            color: #2ecc71;
+        }
+        
+        .remove-type-btn {
+            color: #e74c3c;
+        }
+        
+        .note-day-btn {
+            color: #ff9800;
+        }
+        
+        .empty-day {
+            background: transparent;
+            box-shadow: none;
+            cursor: default;
+        }
+        
+        .empty-day:hover {
+            transform: none;
+            box-shadow: none;
+            background: transparent;
+        }
+        
+        .today .day-number-small {
+            color: #e74c3c;
+        }
+        
+        .today::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 8px;
+            height: 8px;
+            background: #e74c3c;
+            border-radius: 50%;
+        }
+        
+        /* 扭蛋类型样式 */
+        .type-first-gold {
+            background-color: rgba(46, 204, 113, 0.2);
+        }
+        .type-first-ticket {
+            background-color: rgba(52, 152, 219, 0.2);
+        }
+        .type-remix-gold {
+            background-color: rgba(155, 89, 182, 0.2);
+        }
+        .type-spremix-gold {
+            background-color: rgba(231, 76, 60, 0.2);
+        }
+        .type-remix-ticket {
+            background-color: rgba(241, 196, 15, 0.2);
+        }
+        .type-collection {
+            background-color: rgba(255, 105, 180, 0.2);
+        }
+        .type-theme-profile {
+            background-color: rgba(30, 144, 255, 0.2);
+        }
+        .type-gacha-festival {
+            background-color: rgba(138, 43, 226, 0.2);
+        }
+        
+        /* 扭蛋类型标签样式 */
+        .type-first-gold .day-type {
+            background: #2ecc71;
+        }
+        .type-first-ticket .day-type {
+            background: #3498db;
+        }
+        .type-remix-gold .day-type {
+            background: #9b59b6;
+        }
+        .type-spremix-gold .day-type {
+            background: #e74c3c;
+        }
+        .type-remix-ticket .day-type {
+            background: #f1c40f;
+        }
+        .type-collection .day-type {
+            background: #ff69b4;
+        }
+        .type-theme-profile .day-type {
+            background: #1e90ff;
+        }
+        .type-gacha-festival .day-type {
+            background: #8a2be2;
+        }
+        
+        .type-selector-menu {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            padding: 10px;
+            z-index: 100;
+            display: none;
+            min-width: 180px;
+        }
+        
+        .type-selector-menu.show {
+            display: block;
+        }
+        
+        .type-option {
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .type-option:hover {
+            background: #f5f7fa;
+        }
+        
+        .type-option.selected {
+            background: #e3f2fd;
+            position: relative;
+        }
+        
+        .type-option.selected::after {
+            content: '✓';
+            position: absolute;
+            right: 10px;
+            color: #3498db;
+            font-weight: bold;
+        }
+        
+        .type-option-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-top: 20px;
+        }
+        
+        .gacha-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #3498db;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            box-shadow: 0 3px 10px rgba(52, 152, 219, 0.3);
+            z-index: 11;
+        }
+        
+        .save-share-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .share-modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+        
+        .share-url-container {
+            display: flex;
+            margin-top: 20px;
+        }
+        
+        .share-url-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px 0 0 8px;
+            font-size: 1rem;
+        }
+        
+        .copy-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .copy-btn:hover {
+            background: #2980b9;
+        }
+        
+        .copy-success {
+            color: #2ecc71;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .auto-save-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #2ecc71;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 3px 10px rgba(46, 204, 113, 0.3);
+            z-index: 100;
+            display: none;
+        }
+        
+        .clear-confirm-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .clear-confirm-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            position: relative;
+            text-align: center;
+        }
+        
+        .clear-confirm-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+        
+        .preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .preview-item {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .preview-item .remove-preview {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(231, 76, 60, 0.8);
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .preview-item:hover .remove-preview {
+            opacity: 1;
+        }
+        
+        .upload-status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            background: #e3f2fd;
+            text-align: center;
+            font-weight: 500;
+            color: #1976d2;
+            display: none;
+        }
+        
+        /* 备注模态框样式 */
+        .note-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .note-modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+        
+        .note-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .note-modal-title {
+            font-size: 1.5rem;
+            color: #2c3e50;
+        }
+        
+        .note-textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            resize: vertical;
+            margin-bottom: 20px;
+            font-family: inherit;
+        }
+        
+        .note-textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .emoji-picker {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 20px;
+            max-height: 120px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .emoji-btn {
+            font-size: 1.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            transition: transform 0.2s;
+        }
+        
+        .emoji-btn:hover {
+            transform: scale(1.2);
+        }
+        
+        .note-modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        .note-cancel-btn {
+            padding: 10px 20px;
+            background: #95a5a6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .note-save-btn {
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .note-cancel-btn:hover {
+            background: #7f8c8d;
+        }
+        
+        .note-save-btn:hover {
+            background: #2980b9;
+        }
+        
+        @media (max-width: 1100px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .image-section {
+                max-width: 100%;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .date-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .calendar-header {
+                flex-direction: column;
+            }
+            
+            .year-month-control {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .year-select {
+                width: 100%;
+            }
+            
+            .quick-month-select {
+                justify-content: center;
+            }
+            
+            .calendar-grid {
+                gap: 5px;
+            }
+            
+            .day-number-small {
+                font-size: 1.1rem;
+            }
+            
+            .day-type {
+                font-size: 0.55rem;
+                padding: 1px 5px;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .upload-container {
+                flex-direction: column;
+                align-items: flex-end;
+                width: 100%;
+                right: 10px;
+                bottom: 10px;
+            }
+            
+            .day-actions {
+                gap: 3px;
+            }
+            
+            .day-action-btn {
+                width: 24px;
+                height: 24px;
+                font-size: 0.7rem;
+            }
+            
+            .save-share-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .image-section {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>CocoPPa Play扭蛋日历</h1>
+            <p class="subtitle">记录您的扭蛋历史，日期显示更清晰 - 管理您的扭蛋收集，优化扭蛋策略！</p>
+        </header>
+
+        <div class="main-content">
+            <div class="image-section">
+                <!-- 日期显示区域 - 扭蛋类型固定在顶部 -->
+                <div class="date-display">
+                    <div class="date-header">
+                        <div class="date-info">
+                            <div class="day-number" id="current-day-number">14</div>
+                            <div class="day-info" id="current-day-info">6月 2025</div>
+                        </div>
+                        <div class="type-tag-container" id="type-tag-container">
+                            <div class="type-tag" style="background: #8a2be2; color: white;">Gacha Festival</div>
+                            <div class="type-tag" style="background: #ff69b4; color: white;">Collection</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 备注显示区域 -->
+                    <div class="note-container" id="note-container" style="display: none;">
+                        <div class="note-content" id="note-content"></div>
+                        <div class="note-edit-btn" id="edit-note-btn">
+                            <i class="fas fa-edit"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 图片显示区域 - 尺寸自适应 -->
+                <div class="image-display size-default" id="image-container">
+                    <div class="gallery-container">
+                        <div class="gallery-slides">
+                            <div class="gallery-slide">
+                                <img src="https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=640&h=654&crop=entropy" alt="扭蛋图片">
+                            </div>
+                            <div class="gallery-slide">
+                                <img src="https://images.unsplash.com/photo-1598327105666-5b89351aff97?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=640&h=654&crop=entropy" alt="扭蛋图片">
+                            </div>
+                        </div>
+
+                        <div class="gallery-nav gallery-prev">
+                            <i class="fas fa-chevron-left"></i>
+                        </div>
+                        <div class="gallery-nav gallery-next">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+
+                        <div class="gallery-indicators">
+                            <div class="gallery-indicator active"></div>
+                            <div class="gallery-indicator"></div>
+                        </div>
+                    </div>
+
+                    <div class="empty-image">
+                        <i class="fas fa-image" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                        <p>当前日期无扭蛋记录</p>
+                        <p>请上传图片或选择其他日期</p>
+                    </div>
+
+                    <div class="upload-container">
+                        <button class="upload-btn" id="upload-btn">
+                            <i class="fas fa-upload"></i> 上传多图
+                        </button>
+                        <button class="remove-btn" id="remove-btn">
+                            <i class="fas fa-trash"></i> 删除记录
+                        </button>
+                    </div>
+                    
+                    <!-- 图片预览区域 -->
+                    <div class="preview-container" id="preview-container" style="display: none;"></div>
+                    <div class="upload-status" id="upload-status"></div>
+                </div>
+            </div>
+
+            <div class="calendar-section">
+                <div class="calendar-header">
+                    <div class="year-month-control">
+                        <select class="year-select" id="year-select">
+                            <!-- 年份选项将通过JavaScript动态生成 -->
+                        </select>
+
+                        <div class="month-control">
+                            <button class="control-btn" id="prev-month"><i class="fas fa-chevron-left"></i></button>
+                            <div class="month-name" id="month-name">2025年6月</div>
+                            <button class="control-btn" id="next-month"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="calendar-grid" id="calendar-grid">
+                    <!-- 日历将通过JavaScript动态生成 -->
+                </div>
+                
+                <div class="save-share-container">
+                    <button class="save-btn" id="save-data-btn">
+                        <i class="fas fa-save"></i> 导出数据
+                    </button>
+                    <button class="share-btn" id="share-data-btn">
+                        <i class="fas fa-share-alt"></i> 创建分享链接
+                    </button>
+                    <button class="clear-btn" id="clear-data-btn">
+                        <i class="fas fa-broom"></i> 清除所有日期
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>CocoPPa Play扭蛋日历 &copy; 2025 | HTTPS安全连接 | 数据自动保存</p>
+        </footer>
+
+        <!-- 类型选择菜单 -->
+        <div class="type-selector-menu" id="type-selector-menu">
+            <div class="type-option" data-type="首发金">
+                <div class="type-option-color" style="background: #2ecc71;"></div>
+                <span>首发金</span>
+            </div>
+            <div class="type-option" data-type="首发票">
+                <div class="type-option-color" style="background: #3498db;"></div>
+                <span>首发票</span>
+            </div>
+            <div class="type-option" data-type="remix金">
+                <div class="type-option-color" style="background: #9b59b6;"></div>
+                <span>remix金</span>
+            </div>
+            <div class="type-option" data-type="SPremix金">
+                <div class="type-option-color" style="background: #e74c3c;"></div>
+                <span>SPremix金</span>
+            </div>
+            <div class="type-option" data-type="remix票">
+                <div class="type-option-color" style="background: #f1c40f;"></div>
+                <span>remix票</span>
+            </div>
+            <div class="type-option" data-type="Collection">
+                <div class="type-option-color" style="background: #ff69b4;"></div>
+                <span>Collection</span>
+            </div>
+            <div class="type-option" data-type="Theme & Profile">
+                <div class="type-option-color" style="background: #1e90ff;"></div>
+                <span>Theme & Profile</span>
+            </div>
+            <div class="type-option" data-type="Gacha Festival">
+                <div class="type-option-color" style="background: #8a2be2;"></div>
+                <span>Gacha Festival</span>
+            </div>
+        </div>
+        
+        <!-- 分享模态框 -->
+        <div class="share-modal" id="share-modal">
+            <div class="share-modal-content">
+                <span class="close-modal" id="close-share-modal">&times;</span>
+                <h3>分享您的扭蛋日历</h3>
+                <p>复制以下链接分享给其他玩家：</p>
+                <div class="share-url-container">
+                    <input type="text" class="share-url-input" id="share-url-input" readonly value="https://cocoppa-play-calendar.com/share/8a2be2d9">
+                    <button class="copy-btn" id="copy-share-btn">复制</button>
+                </div>
+                <div class="copy-success" id="copy-success">✓ 链接已复制到剪贴板！</div>
+                <div style="margin-top: 20px; background: #f9f9f9; padding: 15px; border-radius: 8px;">
+                    <h4>安全分享提示：</h4>
+                    <p>• 此链接通过HTTPS加密传输，确保您的数据安全</p>
+                    <p>• 分享后其他玩家可以查看您的扭蛋历史</p>
+                    <p>• 链接有效期：30天</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 清除确认模态框 -->
+        <div class="clear-confirm-modal" id="clear-confirm-modal">
+            <div class="clear-confirm-content">
+                <span class="close-modal" id="close-clear-modal">&times;</span>
+                <h3>确认清除所有数据</h3>
+                <p>您确定要清除所有日期的扭蛋记录吗？</p>
+                <p>此操作将永久删除所有已保存的数据，且无法恢复！</p>
+                <div class="clear-confirm-buttons">
+                    <button class="save-btn" id="cancel-clear-btn">取消</button>
+                    <button class="clear-btn" id="confirm-clear-btn">确认清除</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 自动保存指示器 -->
+        <div class="auto-save-indicator" id="auto-save-indicator">
+            <i class="fas fa-sync-alt"></i> 数据已自动保存
+        </div>
+        
+        <!-- 备注编辑模态框 -->
+        <div class="note-modal" id="note-modal">
+            <div class="note-modal-content">
+                <div class="note-modal-header">
+                    <h3 class="note-modal-title">添加备注</h3>
+                    <span class="close-modal" id="close-note-modal">&times;</span>
+                </div>
+                <p>为 <strong id="note-date-display">2025年6月14日</strong> 添加备注：</p>
+                <textarea class="note-textarea" id="note-textarea" placeholder="输入扭蛋详情、wiki链接等..."></textarea>
+                
+                <div class="emoji-picker">
+                    <button class="emoji-btn" data-emoji="😀">😀</button>
+                    <button class="emoji-btn" data-emoji="😍">😍</button>
+                    <button class="emoji-btn" data-emoji="🎉">🎉</button>
+                    <button class="emoji-btn" data-emoji="🎁">🎁</button>
+                    <button class="emoji-btn" data-emoji="💎">💎</button>
+                    <button class="emoji-btn" data-emoji="✨">✨</button>
+                    <button class="emoji-btn" data-emoji="⭐">⭐</button>
+                    <button class="emoji-btn" data-emoji="🔥">🔥</button>
+                    <button class="emoji-btn" data-emoji="💖">💖</button>
+                    <button class="emoji-btn" data-emoji="💯">💯</button>
+                    <button class="emoji-btn" data-emoji="🎯">🎯</button>
+                    <button class="emoji-btn" data-emoji="❤️">❤️</button>
+                    <button class="emoji-btn" data-emoji="👍">👍</button>
+                    <button class="emoji-btn" data-emoji="👏">👏</button>
+                    <button class="emoji-btn" data-emoji="🙌">🙌</button>
+                </div>
+                
+                <div class="note-modal-actions">
+                    <button class="note-cancel-btn" id="note-cancel-btn">取消</button>
+                    <button class="note-save-btn" id="note-save-btn">保存备注</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM元素
+            const dayNumber = document.getElementById('current-day-number');
+            const dayInfo = document.getElementById('current-day-info');
+            const typeTagContainer = document.getElementById('type-tag-container');
+            const imageContainer = document.getElementById('image-container');
+            const uploadBtn = document.getElementById('upload-btn');
+            const removeBtn = document.getElementById('remove-btn');
+            const saveDataBtn = document.getElementById('save-data-btn');
+            const shareDataBtn = document.getElementById('share-data-btn');
+            const clearDataBtn = document.getElementById('clear-data-btn');
+            const gallerySlides = document.querySelector('.gallery-slides');
+            const galleryIndicators = document.querySelector('.gallery-indicators');
+            const galleryPrev = document.querySelector('.gallery-prev');
+            const galleryNext = document.querySelector('.gallery-next');
+            const shareModal = document.getElementById('share-modal');
+            const closeShareModal = document.getElementById('close-share-modal');
+            const shareUrlInput = document.getElementById('share-url-input');
+            const copyShareBtn = document.getElementById('copy-share-btn');
+            const copySuccess = document.getElementById('copy-success');
+            const clearConfirmModal = document.getElementById('clear-confirm-modal');
+            const closeClearModal = document.getElementById('close-clear-modal');
+            const cancelClearBtn = document.getElementById('cancel-clear-btn');
+            const confirmClearBtn = document.getElementById('confirm-clear-btn');
+            const autoSaveIndicator = document.getElementById('auto-save-indicator');
+            const previewContainer = document.getElementById('preview-container');
+            const uploadStatus = document.getElementById('upload-status');
+            const yearSelect = document.getElementById('year-select');
+            
+            // 备注相关元素
+            const noteContainer = document.getElementById('note-container');
+            const noteContent = document.getElementById('note-content');
+            const editNoteBtn = document.getElementById('edit-note-btn');
+            const noteModal = document.getElementById('note-modal');
+            const closeNoteModal = document.getElementById('close-note-modal');
+            const noteTextarea = document.getElementById('note-textarea');
+            const noteSaveBtn = document.getElementById('note-save-btn');
+            const noteCancelBtn = document.getElementById('note-cancel-btn');
+            const noteDateDisplay = document.getElementById('note-date-display');
+            
+            // 文件输入
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.multiple = true;
+            fileInput.style.display = 'none';
+            document.body.appendChild(fileInput);
+            
+            // 日历相关元素
+            const monthName = document.getElementById('month-name');
+            const calendarGrid = document.getElementById('calendar-grid');
+            const prevBtn = document.getElementById('prev-month');
+            const nextBtn = document.getElementById('next-month');
+            const typeSelectorMenu = document.getElementById('type-selector-menu');
+            
+            // 获取当前日期
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth() + 1;
+            const currentDay = today.getDate();
+            
+            // 当前选中的日期（默认为今天）
+            let currentDate = {
+                year: currentYear,
+                month: currentMonth,
+                day: currentDay
+            };
+            
+            // 当前操作的目标日期
+            let targetDay = null;
+            
+            // 轮播图状态
+            let currentSlide = 0;
+            let slideInterval;
+            
+            // 初始化年份选择器 (2014-2026)
+            function initYearSelector() {
+                yearSelect.innerHTML = '';
+                for (let year = 2014; year <= 2026; year++) {
+                    const option = document.createElement('option');
+                    option.value = year;
+                    option.textContent = `${year}年`;
+                    if (year === currentYear) {
+                        option.selected = true;
+                    }
+                    yearSelect.appendChild(option);
+                }
+            }
+            
+            // 初始化数据
+            let imageData = {
+                "2025-6": {
+                    14: { 
+                        types: ["Gacha Festival", "Collection"],
+                        images: [
+                            "https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=640&h=654&crop=entropy",
+                            "https://images.unsplash.com/photo-1598327105666-5b89351aff97?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=640&h=654&crop=entropy"
+                        ],
+                        note: "抽到了稀有角色！🎉 花费了500金币，但非常值得！" 
+                    },
+                    5: { 
+                        types: ["首发金"], 
+                        note: "第一次抽奖，运气不错" 
+                    },
+                    12: { 
+                        types: ["首发票"], 
+                        note: "免费抽奖日，抽到了普通物品" 
+                    },
+                    18: { 
+                        types: ["Collection"], 
+                        note: "收集活动，抽到了3个新物品" 
+                    },
+                    25: { 
+                        types: ["remix金", "Collection"], 
+                        images: [],
+                        note: "双倍概率日，但运气一般💔" 
+                    }
+                },
+                "2025-7": {
+                    3: { 
+                        types: ["SPremix金"], 
+                        note: "SP扭蛋，抽到了限定角色！🔥" 
+                    },
+                    8: { 
+                        types: ["Gacha Festival"], 
+                        note: "节日活动，抽到了特殊背景" 
+                    },
+                    15: { 
+                        types: ["Theme & Profile"], 
+                        note: "新主题抽奖，花费较多但值得" 
+                    },
+                    22: { 
+                        types: ["remix票"], 
+                        note: "使用免费票抽奖，无稀有物品" 
+                    },
+                    29: { 
+                        types: ["首发金"], 
+                        note: "月底抽奖，抽到了想要的物品❤️" 
+                    }
+                },
+                // 添加当前日期示例数据
+                [currentYear + "-" + currentMonth]: {
+                    [currentDay]: {
+                        types: ["Gacha Festival"],
+                        note: "今日扭蛋记录，抽到了限定物品！"
+                    }
+                }
+            };
+            
+            // 类型对应的颜色
+            const typeColors = {
+                "首发金": "#2ecc71",
+                "首发票": "#3498db",
+                "remix金": "#9b59b6",
+                "SPremix金": "#e74c3c",
+                "remix票": "#f1c40f",
+                "Collection": "#ff69b4",
+                "Theme & Profile": "#1e90ff",
+                "Gacha Festival": "#8a2be3"
+            };
+            
+            // 类型对应的CSS类
+            const typeClasses = {
+                "首发金": "type-first-gold",
+                "首发票": "type-first-ticket",
+                "remix金": "type-remix-gold",
+                "SPremix金": "type-spremix-gold",
+                "remix票": "type-remix-ticket",
+                "Collection": "type-collection",
+                "Theme & Profile": "type-theme-profile",
+                "Gacha Festival": "type-gacha-festival"
+            };
+            
+            // 初始化轮播图
+            function initGallery() {
+                // 清除现有轮播内容
+                gallerySlides.innerHTML = '';
+                galleryIndicators.innerHTML = '';
+                
+                const monthKey = `${currentDate.year}-${currentDate.month}`;
+                const dayData = imageData[monthKey]?.[currentDate.day] || {};
+                const images = dayData.images || [];
+                
+                if (images.length === 0) {
+                    imageContainer.classList.add('empty');
+                } else {
+                    imageContainer.classList.remove('empty');
+                    
+                    // 添加轮播图片
+                    images.forEach((img, index) => {
+                        const slide = document.createElement('div');
+                        slide.className = 'gallery-slide';
+                        slide.innerHTML = `<img src="${img}" alt="扭蛋图片">`;
+                        gallerySlides.appendChild(slide);
+                        
+                        // 添加指示器
+                        const indicator = document.createElement('div');
+                        indicator.className = 'gallery-indicator';
+                        if (index === 0) indicator.classList.add('active');
+                        indicator.addEventListener('click', () => goToSlide(index));
+                        galleryIndicators.appendChild(indicator);
+                    });
+                    
+                    currentSlide = 0;
+                    updateSlidePosition();
+                    
+                    // 开始自动轮播
+                    startAutoSlide();
+                }
+                
+                // 更新备注显示
+                updateNoteDisplay();
+            }
+            
+            // 更新备注显示
+            function updateNoteDisplay() {
+                const monthKey = `${currentDate.year}-${currentDate.month}`;
+                const dayData = imageData[monthKey]?.[currentDate.day] || {};
+                
+                if (dayData.note) {
+                    noteContent.innerHTML = dayData.note;
+                    noteContainer.style.display = 'block';
+                } else {
+                    noteContainer.style.display = 'none';
+                }
+            }
+            
+            // 更新轮播位置
+            function updateSlidePosition() {
+                gallerySlides.style.transform = `translateX(-${currentSlide * 100}%)`;
+                
+                // 更新指示器状态
+                document.querySelectorAll('.gallery-indicator').forEach((indicator, index) => {
+                    indicator.classList.toggle('active', index === currentSlide);
+                });
+            }
+            
+            // 前往特定幻灯片
+            function goToSlide(index) {
+                currentSlide = index;
+                updateSlidePosition();
+            }
+            
+            // 下一张幻灯片
+            function nextSlide() {
+                const monthKey = `${currentDate.year}-${currentDate.month}`;
+                const dayData = imageData[monthKey]?.[currentDate.day] || {};
+                const images = dayData.images || [];
+                
+                if (images.length === 0) return;
+                
+                currentSlide = (currentSlide + 1) % images.length;
+                updateSlidePosition();
+            }
+            
+            // 上一张幻灯片
+            function prevSlide() {
+                const monthKey = `${currentDate.year}-${currentDate.month}`;
+                const dayData = imageData[monthKey]?.[currentDate.day] || {};
+                const images = dayData.images || [];
+                
+                if (images.length === 0) return;
+                
+                currentSlide = (currentSlide - 1 + images.length) % images.length;
+                updateSlidePosition();
+            }
+            
+            // 开始自动轮播
+            function startAutoSlide() {
+                clearInterval(slideInterval);
+                slideInterval = setInterval(nextSlide, 5000);
+            }
+            
+            // 根据日期设置图片尺寸
+            function setImageSizeByDate() {
+                // 移除所有尺寸类
+                imageContainer.classList.remove('size-640x480', 'size-640x580', 'size-640x624', 'size-default');
+                
+                // 计算当前日期的数字表示
+                const dateNum = currentDate.year * 10000 + currentDate.month * 100 + currentDate.day;
+                
+                // 2017年5月26日~2019年7月9日 (640x580)
+                if (dateNum >= 20170526 && dateNum <= 20190709) {
+                    imageContainer.classList.add('size-640x580');
+                }
+                // 2014年12月1日~2017年5月25日 (640x480)
+                else if (dateNum >= 20141201 && dateNum <= 20170525) {
+                    imageContainer.classList.add('size-640x480');
+                }
+                // 2014年7月24日~2014年11月30日 (640x624)
+                else if (dateNum >= 20140724 && dateNum <= 20141130) {
+                    imageContainer.classList.add('size-640x624');
+                }
+                // 其他日期
+                else {
+                    imageContainer.classList.add('size-default');
+                }
+            }
+            
+            // 生成日历
+            function generateCalendar() {
+                const monthData = getMonthData(currentDate.year, currentDate.month);
+                const monthKey = `${currentDate.year}-${currentDate.month}`;
+                
+                // 更新月份名称
+                monthName.textContent = `${currentDate.year}年${monthData.name}`;
+                
+                // 更新年份选择
+                yearSelect.value = currentDate.year;
+                
+                // 清空日历网格
+                calendarGrid.innerHTML = '';
+                
+                // 添加星期标题
+                const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+                dayNames.forEach(day => {
+                    const dayHeader = document.createElement('div');
+                    dayHeader.className = 'day-header';
+                    dayHeader.textContent = day;
+                    calendarGrid.appendChild(dayHeader);
+                });
+                
+                // 添加空白单元格
+                for (let i = 0; i < monthData.startDay; i++) {
+                    const emptyDay = document.createElement('div');
+                    emptyDay.className = 'empty-day';
+                    calendarGrid.appendChild(emptyDay);
+                }
+                
+                // 获取当前日期
+                const today = new Date();
+                const isCurrentYear = currentDate.year === today.getFullYear();
+                const isCurrentMonth = currentDate.month === today.getMonth() + 1;
+                
+                // 添加日期单元格
+                for (let day = 1; day <= monthData.days; day++) {
+                    const dayData = imageData[monthKey]?.[day] || {};
+                    const dayTypes = dayData.types || [];
+                    
+                    // 检查是否是今天
+                    const isToday = isCurrentYear && isCurrentMonth && day === today.getDate();
+                    
+                    const calendarDay = document.createElement('div');
+                    calendarDay.className = `calendar-day ${isToday ? 'today' : ''}`;
+                    
+                    // 添加类型类（只取第一个类型作为背景）
+                    if (dayTypes.length > 0) {
+                        const firstType = dayTypes[0];
+                        calendarDay.classList.add(typeClasses[firstType] || '');
+                    }
+                    
+                    if (currentDate.day === day) {
+                        calendarDay.classList.add('active');
+                    }
+                    
+                    // 日期格子内容
+                    calendarDay.innerHTML = `
+                        <div class="day-number-small">${day}</div>
+                        <div class="day-types" id="day-types-${day}"></div>
+                        <div class="day-actions">
+                            <div class="day-action-btn set-type-btn" title="设置类型">
+                                <i class="fas fa-tag"></i>
+                            </div>
+                            <div class="day-action-btn upload-img-btn" title="上传图片">
+                                <i class="fas fa-upload"></i>
+                            </div>
+                            ${dayTypes.length > 0 ? `<div class="day-action-btn remove-type-btn" title="删除类型">
+                                <i class="fas fa-trash-alt"></i>
+                            </div>` : ''}
+                            <div class="day-action-btn note-day-btn" title="添加备注">
+                                <i class="fas fa-sticky-note"></i>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // 添加类型标签
+                    const dayTypesContainer = calendarDay.querySelector('.day-types');
+                    dayTypes.forEach(type => {
+                        const typeTag = document.createElement('div');
+                        typeTag.className = 'day-type';
+                        typeTag.textContent = type;
+                        typeTag.style.background = typeColors[type] || '#95a5a6';
+                        dayTypesContainer.appendChild(typeTag);
+                    });
+                    
+                    // 添加日期点击事件
+                    calendarDay.addEventListener('click', (e) => {
+                        if (!e.target.closest('.day-action-btn')) {
+                            handleDayClick(day);
+                        }
+                    });
+                    
+                    // 添加操作按钮事件
+                    const setTypeBtn = calendarDay.querySelector('.set-type-btn');
+                    const uploadImgBtn = calendarDay.querySelector('.upload-img-btn');
+                    const removeTypeBtn = calendarDay.querySelector('.remove-type-btn');
+                    const noteDayBtn = calendarDay.querySelector('.note-day-btn');
+                    
+                    if (setTypeBtn) {
+                        setTypeBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            targetDay = day;
+                            showTypeSelector(e.target.closest('.calendar-day'), dayTypes);
+                        });
+                    }
+                    
+                    if (uploadImgBtn) {
+                        uploadImgBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            targetDay = day;
+                            fileInput.click();
+                        });
+                    }
+                    
+                    if (removeTypeBtn) {
+                        removeTypeBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            removeType(day);
+                        });
+                    }
+                    
+                    if (noteDayBtn) {
+                        noteDayBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            targetDay = day;
+                            openNoteEditor(day);
+                        });
+                    }
+                    
+                    calendarGrid.appendChild(calendarDay);
+                }
+                
+                // 更新当前日期的显示
+                updateDateDisplay();
+            }
+            
+            // 打开备注编辑器
+            function openNoteEditor(day) {
+                const monthKey = `${currentDate.year}-${currentDate.month}`;
+                const dayData = imageData[monthKey]?.[day] || {};
+                
+                // 更新日期显示
+                noteDateDisplay.textContent = `${currentDate.year}年${currentDate.month}月${day}日`;
+                
+                // 设置当前备注内容
+                noteTextarea.value = dayData.note || '';
+                
+                // 显示模态框
+                noteModal.style.display = 'flex';
+            }
+            
+            // 保存备注
+            function saveNote() {
+                if (targetDay === null) return;
+                
+                const monthKey = `${currentDate.year}-${currentDate.month}`;
+                
+                if (!imageData[monthKey]) {
+                    imageData[monthKey] = {};
+                }
+                
+                if (!imageData[monthKey][targetDay]) {
+                    imageData[monthKey][targetDay] = { types: [], images: [], note: '' };
+                }
+                
+                // 更新备注内容
+                imageData[monthKey][targetDay].note = noteTextarea.value;
+                
+                // 关闭模态框
+                noteModal.style.display = 'none';
+                
+                // 更新显示
+                updateDateDisplay();
+                
+                // 如果当前选中的是这个日期，更新备注显示
+                if (currentDate.day === targetDay) {
+                    updateNoteDisplay();
+                }
+            }
+            
+            // 显示类型选择器
+            function showTypeSelector(targetElement, selectedTypes) {
+                const rect = targetElement.getBoundingClientRect();
+                typeSelectorMenu.style.top = `${rect.bottom + window.scrollY}px`;
+                typeSelectorMenu.style.left = `${rect.left + rect.width/2}px`;
+                typeSelectorMenu.classList.add('show');
+                
+                // 更新选中状态
+                document.querySelectorAll('.type-option').forEach(option => {
+                    const type = option.getAttribute('data-type');
+                    if (selectedTypes.includes(type)) {
+                        option.classList.add('selected');
+                    } else {
+                        option.classList.remove('selected');
+                    }
+                });
+                
+                // 点击其他地方关闭菜单
+                setTimeout(() => {
+                    document.addEventListener('click', closeTypeSelector);
+                }, 10);
+            }
+            
+            // 关闭类型选择器
+            function closeTypeSelector(e) {
+                if (!typeSelectorMenu.contains(e.target)) {
+                    typeSelectorMenu.classList.remove('show');
+                    document.removeEventListener('click', closeTypeSelector);
+                }
+            }
+            
+            // 处理日期点击
+            function handleDayClick(day) {
+                currentDate.day = day;
+                updateDateDisplay();
+                generateCalendar();
+            }
+            
+            // 更新日期显示
+            function updateDateDisplay() {
+                const monthKey = `${currentDate.year}-${currentDate.month}`;
+                const dayData = imageData[monthKey]?.[currentDate.day] || {};
+                const types = dayData.types || [];
+                
+                // 更新顶部显示
+                dayNumber.textContent = currentDate.day;
+                dayInfo.textContent = `${currentDate.month}月 ${currentDate.year}`;
+                
+                // 更新类型标签容器
+                typeTagContainer.innerHTML = '';
+                
+                if (types.length > 0) {
+                    types.forEach(type => {
+                        const tag = document.createElement('div');
+                        tag.className = 'type-tag';
+                        tag.textContent = type;
+                        tag.style.background = typeColors[type] || '#95a5a6';
+                        typeTagContainer.appendChild(tag);
+                    });
+                }
+                
+                // 设置图片尺寸
+                setImageSizeByDate();
+                
+                // 更新轮播图
+                initGallery();
+            }
+            
+            // 设置/移除类型
+            function toggleType(day, type) {
+                const monthKey = `${currentDate.year}-${currentDate.month}`;
+                
+                if (!imageData[monthKey]) {
+                    imageData[monthKey] = {};
+                }
+                
+                if (!imageData[monthKey][day]) {
+                    imageData[monthKey][day] = { types: [], images: [], note: '' };
+                }
+                
+                const dayData = imageData[monthKey][day];
+                const typeIndex = dayData.types.indexOf(type);
+                
+                if (typeIndex !== -1) {
+                    // 移除类型
+                    dayData.types.splice(typeIndex, 1);
+                } else {
+                    // 添加类型
+                    dayData.types.push(type);
+                }
+                
+                // 如果该日期没有类型且没有图片，则删除记录
+                if (dayData.types.length === 0 && dayData.images.length === 0 && !dayData.note) {
+                    delete imageData[monthKey][day];
+                    
+                    // 如果该月份没有其他记录，则删除整个月份
+                    if (Object.keys(imageData[monthKey]).length === 0) {
+                        delete imageData[monthKey];
+                    }
+                }
+                
+                // 如果当前选中的是这个日期，更新显示
+                if (currentDate.day === day) {
+                    updateDateDisplay();
+                }
+                
+                // 重新生成日历
+                generateCalendar();
+            }
+            
+            // 移除类型
+            function removeType(day) {
+                const monthKey = `${currentDate.year}-${currentDate.month}`;
+                
+                if (!imageData[monthKey] || !imageData[monthKey][day]) {
+                    return;
+                }
+                
+                // 删除类型
+                imageData[monthKey][day].types = [];
+                
+                // 如果该日期没有图片和备注，则删除记录
+                if (imageData[monthKey][day].images.length === 0 && !imageData[monthKey][day].note) {
+                    delete imageData[monthKey][day];
+                    
+                    // 如果该月份没有其他记录，则删除整个月份
+                    if (Object.keys(imageData[monthKey]).length === 0) {
+                        delete imageData[monthKey];
+                    }
+                }
+                
+                // 如果当前选中的是这个日期，更新显示
+                if (currentDate.day === day) {
+                    updateDateDisplay();
+                }
+                
+                // 重新生成日历
+                generateCalendar();
+            }
+            
+            // 类型选择事件
+            document.querySelectorAll('.type-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    const type = this.getAttribute('data-type');
+                    if (targetDay !== null) {
+                        toggleType(targetDay, type);
+                    }
+                    typeSelectorMenu.classList.remove('show');
+                    document.removeEventListener('click', closeTypeSelector);
+                });
+            });
+            
+            // 年份选择事件
+            yearSelect.addEventListener('change', function() {
+                currentDate.year = parseInt(this.value);
+                currentDate.day = 1;
+                generateCalendar();
+            });
+            
+            // 月份切换功能
+            prevBtn.addEventListener('click', function() {
+                if (currentDate.month === 1) {
+                    currentDate.month = 12;
+                    currentDate.year--;
+                } else {
+                    currentDate.month--;
+                }
+                currentDate.day = 1;
+                generateCalendar();
+            });
+            
+            nextBtn.addEventListener('click', function() {
+                if (currentDate.month === 12) {
+                    currentDate.month = 1;
+                    currentDate.year++;
+                } else {
+                    currentDate.month++;
+                }
+                currentDate.day = 1;
+                generateCalendar();
+            });
+            
+            // 图片上传功能
+            uploadBtn.addEventListener('click', () => {
+                fileInput.click();
+            });
+            
+            fileInput.addEventListener('change', function(e) {
+                const files = Array.from(e.target.files);
+                if (files.length === 0) return;
+                
+                const validImages = files.filter(file => file.type.match('image.*'));
+                if (validImages.length === 0) {
+                    alert('请选择图片文件！');
+                    return;
+                }
+                
+                // 显示预览容器
+                previewContainer.style.display = 'flex';
+                previewContainer.innerHTML = '';
+                uploadStatus.style.display = 'block';
+                uploadStatus.textContent = `准备上传 ${validImages.length} 张图片...`;
+                
+                const monthKey = `${currentDate.year}-${currentDate.month}`;
+                if (!imageData[monthKey]) {
+                    imageData[monthKey] = {};
+                }
+                
+                if (!imageData[monthKey][currentDate.day]) {
+                    imageData[monthKey][currentDate.day] = {
+                        types: ["Gacha Festival"],
+                        images: [],
+                        note: ""
+                    };
+                }
+                
+                // 读取所有图片
+                let loadedCount = 0;
+                validImages.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        // 添加图片到预览
+                        const previewItem = document.createElement('div');
+                        previewItem.className = 'preview-item';
+                        previewItem.innerHTML = `
+                            <img src="${e.target.result}" alt="预览">
+                            <div class="remove-preview">×</div>
+                        `;
+                        previewContainer.appendChild(previewItem);
+                        
+                        // 添加到数据
+                        imageData[monthKey][currentDate.day].images.push(e.target.result);
+                        loadedCount++;
+                        
+                        // 更新状态
+                        uploadStatus.textContent = `已上传 ${loadedCount}/${validImages.length} 张图片`;
+                        
+                        // 当所有图片加载完成后
+                        if (loadedCount === validImages.length) {
+                            // 显示成功消息
+                            uploadStatus.textContent = `成功上传 ${validImages.length} 张图片到 ${currentDate.year}年${currentDate.month}月${currentDate.day}日！`;
+                            
+                            // 3秒后隐藏状态消息
+                            setTimeout(() => {
+                                uploadStatus.style.display = 'none';
+                                previewContainer.style.display = 'none';
+                            }, 3000);
+                            
+                            // 更新显示
+                            updateDateDisplay();
+                        }
+                    };
+                    
+                    reader.readAsDataURL(file);
+                });
+            });
+            
+            // 删除记录功能
+            removeBtn.addEventListener('click', function() {
+                const monthKey = `${currentDate.year}-${currentDate.month}`;
+                
+                if (!imageData[monthKey] || !imageData[monthKey][currentDate.day]) {
+                    alert('当前日期没有记录可删除！');
+                    return;
+                }
+                
+                // 删除记录
+                delete imageData[monthKey][currentDate.day];
+                
+                // 如果该月份没有其他记录，则删除整个月份
+                if (Object.keys(imageData[monthKey]).length === 0) {
+                    delete imageData[monthKey];
+                }
+                
+                // 显示空白状态
+                imageContainer.classList.add('empty');
+                noteContainer.style.display = 'none';
+                
+                // 显示成功消息
+                alert(`已删除 ${currentDate.year}年${currentDate.month}月${currentDate.day}日 的全部记录`);
+                
+                // 更新日历
+                generateCalendar();
+            });
+            
+            // 保存数据功能
+            saveDataBtn.addEventListener('click', function() {
+                // 将数据转换为JSON字符串
+                const dataStr = JSON.stringify(imageData, null, 2);
+                
+                // 创建Blob对象
+                const blob = new Blob([dataStr], {type: 'application/json'});
+                
+                // 创建下载链接
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `cocoppa-gacha-data-${new Date().toISOString().slice(0,10)}.json`;
+                
+                // 添加链接到页面并触发下载
+                document.body.appendChild(a);
+                a.click();
+                
+                // 清理
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                }, 0);
+                
+                // 显示成功消息
+                alert('扭蛋数据已成功保存！');
+            });
+            
+            // 分享数据功能
+            shareDataBtn.addEventListener('click', function() {
+                // 生成一个简单的随机ID作为分享标识
+                const shareId = Math.random().toString(36).substring(2, 10);
+                
+                // 设置分享链接（实际应用中应该是服务器生成的链接）
+                const shareUrl = `https://cocoppa-play-calendar.com/share/${shareId}`;
+                shareUrlInput.value = shareUrl;
+                
+                // 显示模态框
+                shareModal.style.display = 'flex';
+            });
+            
+            // 关闭分享模态框
+            closeShareModal.addEventListener('click', function() {
+                shareModal.style.display = 'none';
+                copySuccess.style.display = 'none';
+            });
+            
+            // 复制分享链接
+            copyShareBtn.addEventListener('click', function() {
+                shareUrlInput.select();
+                document.execCommand('copy');
+                
+                // 显示成功消息
+                copySuccess.style.display = 'block';
+                
+                // 3秒后隐藏成功消息
+                setTimeout(() => {
+                    copySuccess.style.display = 'none';
+                }, 3000);
+            });
+            
+            // 清除所有数据功能
+            clearDataBtn.addEventListener('click', function() {
+                clearConfirmModal.style.display = 'flex';
+            });
+            
+            // 关闭清除确认模态框
+            closeClearModal.addEventListener('click', function() {
+                clearConfirmModal.style.display = 'none';
+            });
+            
+            cancelClearBtn.addEventListener('click', function() {
+                clearConfirmModal.style.display = 'none';
+            });
+            
+            // 确认清除所有数据
+            confirmClearBtn.addEventListener('click', function() {
+                // 清除所有数据
+                imageData = {};
+                
+                // 关闭模态框
+                clearConfirmModal.style.display = 'none';
+                
+                // 更新显示
+                imageContainer.classList.add('empty');
+                noteContainer.style.display = 'none';
+                
+                // 重新生成日历
+                generateCalendar();
+                
+                // 显示成功消息
+                alert('所有扭蛋数据已成功清除！');
+            });
+            
+            // 点击模态框外部关闭
+            window.addEventListener('click', function(e) {
+                if (e.target === shareModal) {
+                    shareModal.style.display = 'none';
+                    copySuccess.style.display = 'none';
+                }
+                if (e.target === clearConfirmModal) {
+                    clearConfirmModal.style.display = 'none';
+                }
+                if (e.target === noteModal) {
+                    noteModal.style.display = 'none';
+                }
+            });
+            
+            // 轮播图导航
+            galleryPrev.addEventListener('click', prevSlide);
+            galleryNext.addEventListener('click', nextSlide);
+            
+            // 备注相关事件
+            editNoteBtn.addEventListener('click', function() {
+                openNoteEditor(currentDate.day);
+            });
+            
+            noteSaveBtn.addEventListener('click', saveNote);
+            
+            noteCancelBtn.addEventListener('click', function() {
+                noteModal.style.display = 'none';
+            });
+            
+            closeNoteModal.addEventListener('click', function() {
+                noteModal.style.display = 'none';
+            });
+            
+            // 表情符号按钮事件
+            document.querySelectorAll('.emoji-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const emoji = this.getAttribute('data-emoji');
+                    const cursorPos = noteTextarea.selectionStart;
+                    const text = noteTextarea.value;
+                    
+                    // 在光标位置插入表情符号
+                    noteTextarea.value = text.substring(0, cursorPos) + emoji + text.substring(cursorPos);
+                    
+                    // 设置光标位置
+                    noteTextarea.selectionStart = cursorPos + emoji.length;
+                    noteTextarea.selectionEnd = cursorPos + emoji.length;
+                    
+                    // 保持焦点
+                    noteTextarea.focus();
+                });
+            });
+            
+            // 月份数据生成函数
+            function getMonthData(year, month) {
+                // 各月份的天数
+                const daysInMonth = {
+                    1: 31,
+                    2: (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) ? 29 : 28,
+                    3: 31,
+                    4: 30,
+                    5: 31,
+                    6: 30,
+                    7: 31,
+                    8: 31,
+                    9: 30,
+                    10: 31,
+                    11: 30,
+                    12: 31
+                };
+                
+                // 获取月份第一天是星期几
+                const firstDay = new Date(year, month - 1, 1).getDay();
+                
+                return {
+                    name: month + "月",
+                    days: daysInMonth[month],
+                    startDay: firstDay
+                };
+            }
+            
+            // 初始化日历和轮播图
+            initYearSelector(); // 初始化年份选择器
+            generateCalendar();
+        });
+    </script>
+</body>
+</html>
